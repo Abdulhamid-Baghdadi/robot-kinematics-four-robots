@@ -8,11 +8,12 @@
 <style>
 :root {
   --bg: #f6f7f9; --card: #fff; --ink: #1d2430; --muted: #5f6b7a; --line: #dde2e8;
-  --link: #1f4e79; --joint: #e07b00; --cloud: #5b8fc7; --target: #c0392b; --ok: #1e8449; --grid: #eef1f4;
+  --link: #1f4e79; --joint: #e07b00; --cloud: #5b8fc7; --target: #c0392b; --ok: #1e8449; --grid: #eef1f4; --canvas: #f6f7f9; --cloud-a: .2;
 }
 @media (prefers-color-scheme: dark) {
   :root { --bg: #0f1419; --card: #171d24; --ink: #e6e9ee; --muted: #9aa5b1; --line: #2a333d;
-    --link: #8ab8e6; --joint: #f0a040; --cloud: #4a7fb5; --target: #ef6b5b; --ok: #58c27d; --grid: #1f262e; }
+    --link: #e8eef5; --joint: #f0a040; --cloud: #6fb4ff; --target: #ff6b5b; --ok: #58c27d; --grid: #2c3640;
+    --canvas: #1e262f; --cloud-a: .45; }
 }
 * { box-sizing: border-box; }
 body { margin: 0; background: var(--bg); color: var(--ink);
@@ -28,7 +29,7 @@ nav a { text-decoration: none; border: 1px solid var(--line); background: var(--
 section { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
   margin: 24px 0; padding: 20px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; }
 @media (max-width: 820px) { section { grid-template-columns: 1fr; } }
-canvas { width: 100%; aspect-ratio: 1 / 1; display: block; border-radius: 8px; background: var(--bg);
+canvas { width: 100%; aspect-ratio: 1 / 1; display: block; border-radius: 8px; background: var(--canvas);
   touch-action: none; cursor: crosshair; }
 canvas.orbit { cursor: grab; }
 h2 { margin: 0 0 .2em; font-size: 1.35rem; }
@@ -233,7 +234,7 @@ function planar(cid, sid, rid, robot, opt) {
     ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1;
     for (let g = -400; g <= 400; g += 50) { const [a] = toPx([g, 0]), [, b] = toPx([0, g]);
       ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(a, w); ctx.moveTo(0, b); ctx.lineTo(w, b); ctx.stroke(); }
-    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = .18;
+    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = +css("--cloud-a");
     for (const p of opt.cloud) { const [x, y] = toPx(p); ctx.fillRect(x - .9, y - .9, 1.8, 1.8); }
     ctx.globalAlpha = 1;
     const p = opt.fk(q), pts = opt.chain(q).map(toPx);
@@ -268,7 +269,7 @@ function spatial(cid, sid, rid, opt) {
     for (let g = -G; g <= G; g += 50) { line(ctx, proj([g, -G, opt.floor]), proj([g, G, opt.floor])); line(ctx, proj([-G, g, opt.floor]), proj([G, g, opt.floor])); }
     const o = proj([0, 0, opt.floor]); [[60, 0, 0, "x"], [0, 60, 0, "y"], [0, 0, 60, "z"]].forEach(([x, y, z, n]) => {
       const p = proj([x, y, z + opt.floor]); ctx.strokeStyle = css("--muted"); line(ctx, o, p); ctx.fillStyle = css("--muted"); ctx.fillText(n, p[0] + 3, p[1] - 3); });
-    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = .16;
+    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = +css("--cloud-a") * .9;
     for (const p of opt.cloud) { const [x, y] = proj(p); ctx.fillRect(x - .9, y - .9, 1.8, 1.8); }
     ctx.globalAlpha = 1;
     opt.chains(q).forEach(c => chain(ctx, c.map(proj), css("--link"), css("--joint"), 3.5));
