@@ -8,7 +8,7 @@ This repository is the kinematics part of that project, extracted and ported to 
 
 | 2d robot: five-bar | 3d robot: delta | p robot: articulated arm | s robot: SCARA |
 |:---:|:---:|:---:|:---:|
-| ![2d](docs/images/2d-robot.gif) | ![3d](docs/images/3d-robot.gif) | ![p](docs/images/p-robot.gif) | ![s](docs/images/s-robot.gif) |
+| [![2d](docs/images/2d-robot.gif)](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#five-bar) | [![3d](docs/images/3d-robot.gif)](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#delta) | [![p](docs/images/p-robot.gif)](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#arm) | [![s](docs/images/s-robot.gif)](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#scara) |
 
 *In each animation the tool point follows a path (red ✕), the IK computes the joint angles and the FK draws the chain.*
 
@@ -24,6 +24,8 @@ This repository is the kinematics part of that project, extracted and ported to 
 Angles are in degrees, lengths in mm. Every module has `forward_kinematics`, `inverse_kinematics` (raises `ValueError` for unreachable points) and `joint_positions` (for plotting).
 
 ### 2d robot: five-bar linkage
+
+▶ **[Try it live](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#five-bar)** · code: [`kinematics/five_bar_2d.py`](kinematics/five_bar_2d.py)
 
 <img src="docs/notation/2d-robot-fk.png" width="45%"> <img src="docs/notation/2d-robot-ik.png" width="45%">
 
@@ -59,6 +61,8 @@ The right servo works the same way with $`\gamma`$ and $`\delta`$ (elbows out).
 
 ### 3d robot: delta
 
+▶ **[Try it live](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#delta)** · code: [`kinematics/delta_3d.py`](kinematics/delta_3d.py)
+
 <img src="docs/notation/3d-robot-delta.png" width="70%">
 
 Base triangle $`f = 178.78`$, effector triangle $`e = 69.28`$, upper arms $`r_f = 96.1`$, forearms $`r_e = 150`$ mm.
@@ -84,6 +88,8 @@ x = \frac{a_1 z + b_1}{d},\quad y = \frac{a_2 z + b_2}{d}
 The derivation follows the well-known *Delta robot kinematics* tutorial from the Trossen Robotics community, applied to this robot's dimensions.
 
 ### p robot: articulated arm
+
+▶ **[Try it live](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#arm)** · code: [`kinematics/articulated_p.py`](kinematics/articulated_p.py)
 
 <img src="docs/notation/p-robot.png" width="70%">
 
@@ -117,6 +123,8 @@ D = \sqrt{r^2 + (z - L_1)^2}
 where $`\beta`$ is the angle between $`D`$ and the upper arm.
 
 ### s robot: SCARA
+
+▶ **[Try it live](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/#scara)** · code: [`kinematics/scara_s.py`](kinematics/scara_s.py)
 
 <img src="docs/notation/s-robot.png" width="70%">
 
@@ -155,6 +163,15 @@ python examples/roundtrip_demo.py   # one pose per robot, FK -> IK -> FK
 python examples/animate.py          # re-renders the GIFs in docs/images
 ```
 
+| File | What it does |
+|---|---|
+| [`requirements.txt`](requirements.txt) | Python dependencies |
+| [`tests/test_roundtrip.py`](tests/test_roundtrip.py) | round-trip and reachability tests |
+| [`examples/roundtrip_demo.py`](examples/roundtrip_demo.py) | prints FK → IK → FK for one pose per robot |
+| [`examples/animate.py`](examples/animate.py) | renders the GIFs in [`docs/images`](docs/images) |
+| [`docs/index.html`](docs/index.html) | the [interactive page](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/) |
+| [`docs/notation`](docs/notation) | notation diagrams from the original slides |
+
 ```
 2d  five-bar  q=(  20.000,   35.000) deg -> p=(  22.823,  246.191) mm -> IK q=(  20.000,   35.000)  |dq|max=1.4e-14
 3d  delta     q=(  10.000,   25.000,   40.000) deg -> p=(  17.121,  -27.281, -128.096) mm -> IK q=(  10.000,   25.000,   40.000)  |dq|max=1.4e-14
@@ -176,4 +193,4 @@ The tests sample 500 random joint vectors per robot. Each closed-form IK returns
 
 Chocko-station was built by a team (group F). The full project included the ROS nodes, a teaching GUI, a camera, pumps, Arduino firmware and the station itself. It stays in a private repository. Teammate **Moritz Abdank** wrote a large share of the overall project (about 63 % of all commits).
 
-**My part (Abdulhamid Baghdadi):** the robot kinematics in this repository. According to the git history, I wrote all four kinematics files and the four notation slide decks. I worked out the five-bar and articulated-arm models, adapted published delta and SCARA solutions to our geometry, and corrected the zero points during commissioning. In this extraction I also wrote the round-trip tests, the animations and the two bug fixes above.
+**My part (Abdulhamid Baghdadi):** the robot kinematics in this repository. According to the git history, I wrote all four [kinematics files](kinematics) and the four notation slide decks. I worked out the five-bar and articulated-arm models, adapted published delta and SCARA solutions to our geometry, and corrected the zero points during commissioning. In this extraction I also wrote the round-trip tests, the animations and the two bug fixes above.
