@@ -58,7 +58,7 @@ footer { color: var(--muted); font-size: .9rem; padding-bottom: 40px; }
 <main>
 
 <section id="five-bar">
-  <div><canvas id="c-2d"></canvas><p class="hint">Drag anywhere in the cloud to move the tool point.</p></div>
+  <div><canvas id="c-2d"></canvas><p class="hint">Drag anywhere in the cloud to move the tool point (servo limits −90° to 150°).</p></div>
   <div>
     <h2>2d robot: five-bar linkage</h2>
     <p class="kind">A parallel robot. Two servos 78&nbsp;mm apart each drive a 100&nbsp;mm crank, and two 180&nbsp;mm links meet at the tool. Two motors on the base give a light, stiff arm.</p>
@@ -73,7 +73,7 @@ footer { color: var(--muted); font-size: .9rem; padding-bottom: 40px; }
 </section>
 
 <section id="scara">
-  <div><canvas id="c-s"></canvas><p class="hint">Drag to move the tool point. The ring is the reachable annulus.</p></div>
+  <div><canvas id="c-s"></canvas><p class="hint">Drag to move the tool point. The cloud is what the arm reaches within its joint limits (θ1 ±150°, θ2 0–170°).</p></div>
   <div>
     <h2>s robot: SCARA</h2>
     <p class="kind">A serial arm with two revolute joints (92.75&nbsp;mm and 70.72&nbsp;mm links). The third servo turns a 20&nbsp;mm wheel, so its "position" is the distance rolled.</p>
@@ -228,7 +228,8 @@ function planar(cid, sid, rid, robot, opt) {
   const V = setup(cid); let q = opt.q0.slice();
   const toPx = ([x, y]) => [V.w / 2 + (x - opt.cx) * V.w / opt.span, V.w * opt.top - (y - opt.cy) * V.w / opt.span];
   const toMm = (px, py) => [(px - V.w / 2) * opt.span / V.w + opt.cx, (V.w * opt.top - py) * opt.span / V.w + opt.cy];
-  const S = sliders(sid, opt.names, opt.ranges, q, v => { const p = opt.fk(v); if (p) { q = v; draw(); } });
+  const ok = v => !!opt.fk(v) && (!opt.valid || opt.valid(v));
+  const S = sliders(sid, opt.names, opt.ranges, q, v => { if (ok(v)) { q = v; draw(); } S.set(q); });
   function draw() {
     const { ctx, w } = V; ctx.clearRect(0, 0, w, w);
     ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1;
@@ -247,8 +248,12 @@ function planar(cid, sid, rid, robot, opt) {
       (err < 1e-6 ? `<span class="ok">IK(FK(q)) = q  ✓</span>` : `<span class="bad">other IK branch (elbow flipped)</span>`);
   }
   let drag = false;
-  const move = e => { const r = V.cv.getBoundingClientRect(), p = toMm(e.clientX - r.left, e.clientY - r.top), s = opt.ik(p);
-    if (s && opt.fk(s)) { q = s; draw(); } };
+  // only accept IK solutions inside the joint limits, so the tool stays in the workspace cloud
+  const inLimits = v => v.every((a, i) => a >= opt.ranges[i][0] && a <= opt.ranges[i][1]);
+  const move = e => { const r = V.cv.getBoundingClientRect(), p = toMm(e.clientX - r.left, e.clientY - r.top);
+    let s = opt.ik(p); if (!s) return;
+    s = s.map(a => ((a + 540) % 360) - 180);  // wrap to [-180, 180)
+    if (inLimits(s) && ok(s)) { q = s; draw(); } };
   V.cv.addEventListener("pointerdown", e => { drag = true; V.cv.setPointerCapture(e.pointerId); move(e); });
   V.cv.addEventListener("pointermove", e => drag && move(e));
   V.cv.addEventListener("pointerup", () => drag = false);
@@ -290,7 +295,7 @@ function spatial(cid, sid, rid, opt) {
 
 const views = [
   planar("c-2d", "s-2d", "r-2d", five, { q0: [30, 30], names: ["θ0", "θ1"], ranges: [[-90, 150], [-90, 150]],
-    fk: q => five.fk(...q), ik: p => five.ik(...p),
+    fk: q => five.fk(...q), ik: p => five.ik(...p), valid: q => five.elbowsOut(...q),
     chain: q => { const [a, b] = five.elbows(...q); return [[-five.L0 / 2, 0], a, five.fk(...q), b, [five.L0 / 2, 0]]; },
     cloud: cloud2d, cx: 0, cy: 0, span: 620, top: .62 }),
   planar("c-s", "s-s", "r-s", scara, { q0: [-30, 70], names: ["θ1", "θ2"], ranges: [[-150, 150], [0, 170]],
