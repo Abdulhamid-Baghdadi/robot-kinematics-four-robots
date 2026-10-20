@@ -4,6 +4,8 @@ Closed-form **forward and inverse kinematics** for the four robots of *Chocko-st
 
 This repository is the kinematics part of that project, extracted and ported to Python 3, with round-trip tests and an animation for each robot.
 
+**[Interactive page →](https://abdulhamid-baghdadi.github.io/robot-kinematics-four-robots/)** Move the joints or drag the tool point of each robot in the browser and see its reachable workspace.
+
 | 2d robot: five-bar | 3d robot: delta | p robot: articulated arm | s robot: SCARA |
 |:---:|:---:|:---:|:---:|
 | ![2d](docs/images/2d-robot.gif) | ![3d](docs/images/3d-robot.gif) | ![p](docs/images/p-robot.gif) | ![s](docs/images/s-robot.gif) |

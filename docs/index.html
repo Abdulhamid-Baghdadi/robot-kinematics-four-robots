@@ -1,0 +1,312 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Robot Kinematics: Four Robots</title>
+<meta name="description" content="Interactive forward and inverse kinematics of a five-bar, a delta, an articulated arm and a SCARA robot, with their workspaces.">
+<style>
+:root {
+  --bg: #f6f7f9; --card: #fff; --ink: #1d2430; --muted: #5f6b7a; --line: #dde2e8;
+  --link: #1f4e79; --joint: #e07b00; --cloud: #5b8fc7; --target: #c0392b; --ok: #1e8449; --grid: #eef1f4;
+}
+@media (prefers-color-scheme: dark) {
+  :root { --bg: #0f1419; --card: #171d24; --ink: #e6e9ee; --muted: #9aa5b1; --line: #2a333d;
+    --link: #8ab8e6; --joint: #f0a040; --cloud: #4a7fb5; --target: #ef6b5b; --ok: #58c27d; --grid: #1f262e; }
+}
+* { box-sizing: border-box; }
+body { margin: 0; background: var(--bg); color: var(--ink);
+  font: 16px/1.55 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+header, main, footer { max-width: 1100px; margin: 0 auto; padding: 0 16px; }
+header { padding-top: 40px; }
+h1 { font-size: 2rem; margin: 0 0 .3em; letter-spacing: -.01em; }
+header p { color: var(--muted); max-width: 720px; margin: 0 0 .5em; }
+a { color: var(--link); }
+nav { display: flex; flex-wrap: wrap; gap: 8px; margin: 20px 0 8px; }
+nav a { text-decoration: none; border: 1px solid var(--line); background: var(--card);
+  padding: 4px 12px; border-radius: 999px; font-size: .9rem; }
+section { background: var(--card); border: 1px solid var(--line); border-radius: 12px;
+  margin: 24px 0; padding: 20px; display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(0, 1fr); gap: 24px; }
+@media (max-width: 820px) { section { grid-template-columns: 1fr; } }
+canvas { width: 100%; aspect-ratio: 1 / 1; display: block; border-radius: 8px; background: var(--bg);
+  touch-action: none; cursor: crosshair; }
+canvas.orbit { cursor: grab; }
+h2 { margin: 0 0 .2em; font-size: 1.35rem; }
+.kind { color: var(--muted); margin: 0 0 1em; }
+.hint { font-size: .85rem; color: var(--muted); margin: 6px 0 0; }
+.slider { display: grid; grid-template-columns: 2.2em 1fr 4.2em; align-items: center; gap: 8px; margin: 6px 0; }
+.slider input { width: 100%; accent-color: var(--joint); }
+.slider output { text-align: right; font-variant-numeric: tabular-nums; }
+.readout { font: 13px/1.6 ui-monospace, SFMono-Regular, Consolas, monospace; background: var(--bg);
+  border-radius: 8px; padding: 10px 12px; margin: 12px 0; white-space: pre; overflow-x: auto; }
+.ok { color: var(--ok); } .bad { color: var(--target); }
+details { margin-top: 8px; } summary { cursor: pointer; color: var(--link); }
+.legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: .85rem; color: var(--muted); margin-top: 8px; }
+.legend span::before { content: ""; display: inline-block; width: 10px; height: 10px; border-radius: 50%;
+  margin-right: 6px; vertical-align: -1px; background: var(--c); }
+footer { color: var(--muted); font-size: .9rem; padding-bottom: 40px; }
+</style>
+</head>
+<body>
+<header>
+  <h1>Robot kinematics: four small robots</h1>
+  <p>Forward and inverse kinematics for the four servo robots of <em>Chocko-station</em>, a 2021 team project. Move the joints with the sliders, or drag the tool point on the 2D robots. The inverse kinematics then finds the joint angles. The blue cloud is each robot's reachable workspace, sampled from its forward kinematics.</p>
+  <p><a href="https://github.com/Abdulhamid-Baghdadi/robot-kinematics-four-robots">Source code, equations and tests on GitHub →</a></p>
+  <nav><a href="#five-bar">2d · five-bar</a><a href="#scara">s · SCARA</a><a href="#arm">p · articulated arm</a><a href="#delta">3d · delta</a></nav>
+</header>
+<main>
+
+<section id="five-bar">
+  <div><canvas id="c-2d"></canvas><p class="hint">Drag anywhere in the cloud to move the tool point.</p></div>
+  <div>
+    <h2>2d robot: five-bar linkage</h2>
+    <p class="kind">A parallel robot. Two servos 78&nbsp;mm apart each drive a 100&nbsp;mm crank, and two 180&nbsp;mm links meet at the tool. Two motors on the base give a light, stiff arm.</p>
+    <div id="s-2d"></div>
+    <div class="readout" id="r-2d"></div>
+    <details><summary>How it is solved</summary>
+      <p><b>FK:</b> the two crank tips are known from the servo angles. The tool lies on the perpendicular bisector between them, at distance 180&nbsp;mm from both (intersection of two circles).</p>
+      <p><b>IK:</b> each side is a triangle (crank, link, servo–tool distance). The cosine rule gives each servo angle separately, choosing the "elbows out" solution.</p>
+    </details>
+    <div class="legend"><span style="--c:var(--cloud)">workspace (elbows out)</span><span style="--c:var(--joint)">joints</span><span style="--c:var(--target)">tool</span></div>
+  </div>
+</section>
+
+<section id="scara">
+  <div><canvas id="c-s"></canvas><p class="hint">Drag to move the tool point. The ring is the reachable annulus.</p></div>
+  <div>
+    <h2>s robot: SCARA</h2>
+    <p class="kind">A serial arm with two revolute joints (92.75&nbsp;mm and 70.72&nbsp;mm links). The third servo turns a 20&nbsp;mm wheel, so its "position" is the distance rolled.</p>
+    <div id="s-s"></div>
+    <div class="readout" id="r-s"></div>
+    <details><summary>How it is solved</summary>
+      <p><b>FK:</b> add the two link vectors.</p>
+      <p><b>IK:</b> the distance <i>r</i> from base to target fixes the elbow angle (cosine rule). The bearing of the target minus the angle the elbow adds gives the shoulder.</p>
+    </details>
+    <div class="legend"><span style="--c:var(--cloud)">workspace</span><span style="--c:var(--joint)">joints</span><span style="--c:var(--target)">tool</span></div>
+  </div>
+</section>
+
+<section id="arm">
+  <div><canvas id="c-p" class="orbit"></canvas><p class="hint">Drag to rotate the view.</p></div>
+  <div>
+    <h2>p robot: articulated arm</h2>
+    <p class="kind">A 3-axis arm: base yaw, shoulder and elbow, on an 88&nbsp;mm column with a 120&nbsp;mm upper arm and a 150&nbsp;mm forearm.</p>
+    <div id="s-p"></div>
+    <div class="readout" id="r-p"></div>
+    <details><summary>How it is solved</summary>
+      <p><b>FK:</b> the shoulder and elbow make a 2-link arm in a vertical plane, which the base angle then rotates about z.</p>
+      <p><b>IK:</b> the base angle is <code>atan2(y, x)</code>. In the arm plane the cosine rule gives the elbow, and the shoulder follows from the angle to the target.</p>
+    </details>
+    <div class="legend"><span style="--c:var(--cloud)">workspace</span><span style="--c:var(--joint)">joints</span><span style="--c:var(--target)">tool</span></div>
+  </div>
+</section>
+
+<section id="delta">
+  <div><canvas id="c-3d" class="orbit"></canvas><p class="hint">Drag to rotate the view.</p></div>
+  <div>
+    <h2>3d robot: delta</h2>
+    <p class="kind">A parallel robot. Three servos on a triangular base each swing a 96&nbsp;mm arm. 150&nbsp;mm parallelogram forearms carry a small effector plate that always stays level.</p>
+    <div id="s-3d"></div>
+    <div class="readout" id="r-3d"></div>
+    <details><summary>How it is solved</summary>
+      <p><b>IK:</b> each arm is solved in its own vertical plane, where the arm's circle meets the forearm's sphere. Arms 2 and 3 reuse the same function with the target rotated by ±120°.</p>
+      <p><b>FK:</b> the effector is where three spheres (one per forearm) intersect. This reduces to a quadratic in z.</p>
+    </details>
+    <div class="legend"><span style="--c:var(--cloud)">workspace</span><span style="--c:var(--joint)">joints</span><span style="--c:var(--target)">effector</span></div>
+  </div>
+</section>
+
+</main>
+<footer>
+  <p>Angles in degrees, lengths in mm. The kinematics here is a JavaScript port of the Python modules in the repository. The page runs entirely in your browser.</p>
+</footer>
+
+<script>
+"use strict";
+const R = Math.PI / 180, D = 180 / Math.PI;
+const { sin, cos, sqrt, acos, asin, atan, atan2, PI, hypot } = Math;
+const css = n => getComputedStyle(document.documentElement).getPropertyValue(n).trim();
+
+/* ---------- kinematics (same equations as kinematics/*.py) ---------- */
+const five = { L0: 78.08, L1: 100, L4: 180,
+  elbows(t0, t1) { const { L0, L1 } = this;
+    return [[-L1 * sin(t0 * R) - L0 / 2, L1 * cos(t0 * R)], [L1 * sin(t1 * R) + L0 / 2, L1 * cos(t1 * R)]]; },
+  fk(t0, t1) { const [[xa, ya], [xb, yb]] = this.elbows(t0, t1);
+    const c = hypot(xb - xa, yb - ya) / (2 * this.L4); if (c > 1) return null;
+    const a = atan2(yb - ya, xb - xa), d = acos(c);
+    return [xa + this.L4 * cos(a + d), ya + this.L4 * sin(a + d)]; },
+  ik(x, y) { const { L0, L1, L4 } = this;
+    const l04 = hypot(x + L0 / 2, y), l14 = hypot(x - L0 / 2, y);
+    const cb = (L1 * L1 - L4 * L4 + l04 * l04) / (2 * L1 * l04), cd = (L1 * L1 - L4 * L4 + l14 * l14) / (2 * L1 * l14);
+    if (Math.abs(cb) > 1 || Math.abs(cd) > 1) return null;
+    return [(acos(cb) - (PI / 2 - atan2(y, x + L0 / 2))) * D, (acos(cd) - (atan2(y, x - L0 / 2) - PI / 2)) * D]; },
+  elbowsOut(t0, t1) { const p = this.fk(t0, t1); if (!p) return false;
+    const [p2, p3] = this.elbows(t0, t1), P0 = [-this.L0 / 2, 0], P1 = [this.L0 / 2, 0];
+    const cr = (o, a, b) => (a[0] - o[0]) * (b[1] - o[1]) - (a[1] - o[1]) * (b[0] - o[0]);
+    return cr(P0, p, p2) > 0 && cr(P1, p, p3) < 0; } };
+
+const scara = { L1: 92.75, L2: 70.72, Rw: 20,
+  fk(t1, t2, t3 = 0) { const { L1, L2 } = this;
+    return [L1 * sin(t1 * R) + L2 * sin((t1 + t2) * R), L1 * cos(t1 * R) + L2 * cos((t1 + t2) * R), this.Rw * t3 * R]; },
+  ik(x, y, z = 0) { const { L1, L2 } = this, r = hypot(x, y);
+    const ca = (L1 * L1 + L2 * L2 - r * r) / (2 * L1 * L2); if (Math.abs(ca) > 1 || r === 0) return null;
+    const t2 = PI - acos(ca), a = L2 * cos(t2), b = L2 * sin(t2);
+    const cb = ((L1 + a) ** 2 + r * r - b * b) / (2 * (L1 + a) * r);
+    return [(atan2(x, y) - acos(Math.max(-1, Math.min(1, cb)))) * D, t2 * D, z / this.Rw * D]; } };
+
+const arm = { L1: 88.2, L2: 120.23, L3: 150,
+  fk(t1, t2, t3) { const { L1, L2, L3 } = this, a = t2 * R, b = (t3 + 90) * R;
+    const r = L2 * sin(a) + L3 * sin(a + b);
+    return [r * cos(t1 * R), r * sin(t1 * R), L2 * cos(a) + L3 * cos(a + b) + L1]; },
+  ik(x, y, z) { const { L1, L2, L3 } = this, r = hypot(x, y), Dd = hypot(r, z - L1);
+    const ca = (L3 * L3 + L2 * L2 - Dd * Dd) / (2 * L2 * L3); if (Math.abs(ca) > 1) return null;
+    const t3 = PI - acos(ca), a = L3 * cos(t3), b = L3 * sin(t3);
+    const cb = ((L2 + a) ** 2 + Dd * Dd - b * b) / (2 * (L2 + a) * Dd);
+    return [atan2(y, x) * D, (PI / 2 - asin((z - L1) / Dd) - acos(Math.max(-1, Math.min(1, cb)))) * D, t3 * D - 90]; },
+  joints(t1, t2, t3) { const a = t2 * R, re = this.L2 * sin(a);
+    return [[0, 0, 0], [0, 0, this.L1], [re * cos(t1 * R), re * sin(t1 * R), this.L1 + this.L2 * cos(a)], this.fk(t1, t2, t3)]; } };
+
+const delta = { e: 69.28, f: 178.78, re: 150, rf: 96.1,
+  get t30() { return 1 / sqrt(3); },
+  elbows(a, b, c) { const t = (this.f - this.e) * this.t30 / 2, rf = this.rf, s3 = sqrt(3);
+    const y1 = -(t + rf * cos(a * R)), z1 = -rf * sin(a * R);
+    const y2 = (t + rf * cos(b * R)) * .5, x2 = y2 * s3, z2 = -rf * sin(b * R);
+    const y3 = (t + rf * cos(c * R)) * .5, x3 = -y3 * s3, z3 = -rf * sin(c * R);
+    return [[0, y1, z1], [x2, y2, z2], [x3, y3, z3]]; },
+  fk(a, b, c) { const [[, y1, z1], [x2, y2, z2], [x3, y3, z3]] = this.elbows(a, b, c);
+    const dnm = (y2 - y1) * x3 - (y3 - y1) * x2, w1 = y1 * y1 + z1 * z1, w2 = x2 * x2 + y2 * y2 + z2 * z2, w3 = x3 * x3 + y3 * y3 + z3 * z3;
+    const a1 = (z2 - z1) * (y3 - y1) - (z3 - z1) * (y2 - y1), b1 = -((w2 - w1) * (y3 - y1) - (w3 - w1) * (y2 - y1)) / 2;
+    const a2 = -(z2 - z1) * x3 + (z3 - z1) * x2, b2 = ((w2 - w1) * x3 - (w3 - w1) * x2) / 2;
+    const A = a1 * a1 + a2 * a2 + dnm * dnm, B = 2 * (a1 * b1 + a2 * (b2 - y1 * dnm) - z1 * dnm * dnm);
+    const C = (b2 - y1 * dnm) ** 2 + b1 * b1 + dnm * dnm * (z1 * z1 - this.re * this.re), d = B * B - 4 * A * C;
+    if (d < 0) return null; const z = -.5 * (B + sqrt(d)) / A; return [(a1 * z + b1) / dnm, (a2 * z + b2) / dnm, z]; },
+  yz(x0, y0, z0) { const y1 = -.5 * this.t30 * this.f; y0 -= .5 * this.t30 * this.e;
+    const a = (x0 * x0 + y0 * y0 + z0 * z0 + this.rf ** 2 - this.re ** 2 - y1 * y1) / (2 * z0), b = (y1 - y0) / z0;
+    const d = -((a + b * y1) ** 2) +this.rf * (b * b * this.rf + this.rf); if (d < 0) return null;
+    const yj = (y1 - a * b - sqrt(d)) / (b * b + 1), zj = a + b * yj;
+    return (atan(-zj / (y1 - yj)) + (yj > y1 ? PI : 0)) * D; },
+  ik(x, y, z) { const c = -.5, s = sqrt(3) / 2;
+    const r = [this.yz(x, y, z), this.yz(x * c + y * s, y * c - x * s, z), this.yz(x * c - y * s, y * c + x * s, z)];
+    return r.includes(null) ? null : r; },
+  arms(a, b, c) { const p = this.fk(a, b, c); if (!p) return null;
+    const rb = this.f * this.t30 / 2, rE = this.e * this.t30 / 2;
+    return [-PI / 2, PI / 6, 5 * PI / 6].map((g, i) => { const th = [a, b, c][i] * R, u = [cos(g), sin(g)], k = rb + this.rf * cos(th);
+      return [[rb * u[0], rb * u[1], 0], [k * u[0], k * u[1], -this.rf * sin(th)], [p[0] + rE * u[0], p[1] + rE * u[1], p[2]]]; }); } };
+
+/* ---------- workspace clouds (sampled once) ---------- */
+function sample(n, ranges, f) { const pts = [];
+  for (let i = 0; i < n; i++) { const q = ranges.map(([a, b]) => a + Math.random() * (b - a)); const p = f(q); if (p) pts.push(p); }
+  return pts; }
+const cloud2d = sample(40000, [[-90, 150], [-90, 150]], q => five.elbowsOut(...q) ? five.fk(...q) : null);
+const cloudS = sample(25000, [[-150, 150], [0, 170]], q => scara.fk(q[0], q[1]));
+const cloudP = sample(16000, [[-90, 90], [-80, 80], [-89, 89]], q => arm.fk(...q));
+const cloud3 = sample(16000, [[-40, 90], [-40, 90], [-40, 90]], q => delta.fk(...q));
+
+/* ---------- drawing helpers ---------- */
+function setup(id) { const cv = document.getElementById(id), ctx = cv.getContext("2d");
+  const fit = () => { const w = cv.clientWidth, dpr = window.devicePixelRatio || 1; cv.width = w * dpr; cv.height = w * dpr; ctx.setTransform(dpr, 0, 0, dpr, 0, 0); };
+  fit(); return { cv, ctx, fit, get w() { return cv.clientWidth; } }; }
+function chain(ctx, pts, colLink, colJoint, lw = 4) {
+  ctx.strokeStyle = colLink; ctx.lineWidth = lw; ctx.lineJoin = ctx.lineCap = "round";
+  ctx.beginPath(); pts.forEach(([x, y], i) => i ? ctx.lineTo(x, y) : ctx.moveTo(x, y)); ctx.stroke();
+  ctx.fillStyle = colJoint; pts.forEach(([x, y]) => { ctx.beginPath(); ctx.arc(x, y, 5, 0, 2 * PI); ctx.fill(); }); }
+function cross(ctx, x, y, col) { ctx.strokeStyle = col; ctx.lineWidth = 2.5; ctx.beginPath();
+  ctx.moveTo(x - 7, y - 7); ctx.lineTo(x + 7, y + 7); ctx.moveTo(x + 7, y - 7); ctx.lineTo(x - 7, y + 7); ctx.stroke(); }
+function sliders(id, names, ranges, values, onInput) {
+  const host = document.getElementById(id), inputs = [];
+  names.forEach((n, i) => { const row = document.createElement("label"); row.className = "slider";
+    row.innerHTML = `<span>${n}</span><input type="range" min="${ranges[i][0]}" max="${ranges[i][1]}" step="0.5" value="${values[i]}"><output></output>`;
+    host.appendChild(row); const inp = row.querySelector("input"), out = row.querySelector("output");
+    inp.addEventListener("input", () => onInput(inputs.map(o => +o.inp.value)));
+    inputs.push({ inp, out }); });
+  return { set(v) { v.forEach((x, i) => { inputs[i].inp.value = x; inputs[i].out.textContent = x.toFixed(1) + "°"; }); } }; }
+const f1 = v => v.map(x => x.toFixed(1).padStart(7)).join(", ");
+
+/* ---------- planar views ---------- */
+function planar(cid, sid, rid, robot, opt) {
+  const V = setup(cid); let q = opt.q0.slice();
+  const toPx = ([x, y]) => [V.w / 2 + (x - opt.cx) * V.w / opt.span, V.w * opt.top - (y - opt.cy) * V.w / opt.span];
+  const toMm = (px, py) => [(px - V.w / 2) * opt.span / V.w + opt.cx, (V.w * opt.top - py) * opt.span / V.w + opt.cy];
+  const S = sliders(sid, opt.names, opt.ranges, q, v => { const p = opt.fk(v); if (p) { q = v; draw(); } });
+  function draw() {
+    const { ctx, w } = V; ctx.clearRect(0, 0, w, w);
+    ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1;
+    for (let g = -400; g <= 400; g += 50) { const [a] = toPx([g, 0]), [, b] = toPx([0, g]);
+      ctx.beginPath(); ctx.moveTo(a, 0); ctx.lineTo(a, w); ctx.moveTo(0, b); ctx.lineTo(w, b); ctx.stroke(); }
+    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = .18;
+    for (const p of opt.cloud) { const [x, y] = toPx(p); ctx.fillRect(x - .9, y - .9, 1.8, 1.8); }
+    ctx.globalAlpha = 1;
+    const p = opt.fk(q), pts = opt.chain(q).map(toPx);
+    chain(ctx, pts, css("--link"), css("--joint")); const [tx, ty] = toPx(p); cross(ctx, tx, ty, css("--target"));
+    ctx.fillStyle = css("--muted"); ctx.font = "12px system-ui"; ctx.fillText("50 mm grid", 10, w - 10);
+    S.set(q); const back = opt.ik(p);
+    const err = back ? Math.max(...q.map((a, i) => Math.abs(((back[i] - a + 540) % 360) - 180))) : NaN;
+    document.getElementById(rid).innerHTML =
+      `joints  q  = (${f1(q)}) °\nFK  p = (${f1(p)}) mm\nIK  q' = (${back ? f1(back) : "unreachable"}) °\n` +
+      (err < 1e-6 ? `<span class="ok">IK(FK(q)) = q  ✓</span>` : `<span class="bad">other IK branch (elbow flipped)</span>`);
+  }
+  let drag = false;
+  const move = e => { const r = V.cv.getBoundingClientRect(), p = toMm(e.clientX - r.left, e.clientY - r.top), s = opt.ik(p);
+    if (s && opt.fk(s)) { q = s; draw(); } };
+  V.cv.addEventListener("pointerdown", e => { drag = true; V.cv.setPointerCapture(e.pointerId); move(e); });
+  V.cv.addEventListener("pointermove", e => drag && move(e));
+  V.cv.addEventListener("pointerup", () => drag = false);
+  return { draw, fit: V.fit };
+}
+
+/* ---------- 3D views (orthographic, drag to orbit) ---------- */
+function spatial(cid, sid, rid, opt) {
+  const V = setup(cid); let q = opt.q0.slice(), yaw = opt.yaw, pitch = opt.pitch;
+  const S = sliders(sid, opt.names, opt.ranges, q, v => { if (opt.fk(v)) { q = v; draw(); } });
+  const proj = ([x, y, z]) => { x -= opt.c[0]; y -= opt.c[1]; z -= opt.c[2];
+    const xr = x * cos(yaw) - y * sin(yaw), yr = x * sin(yaw) + y * cos(yaw);
+    const sc = V.w / opt.span; return [V.w / 2 + xr * sc, V.w / 2 - (z * cos(pitch) - yr * sin(pitch)) * sc, yr * cos(pitch) + z * sin(pitch)]; };
+  function line(ctx, a, b) { ctx.beginPath(); ctx.moveTo(a[0], a[1]); ctx.lineTo(b[0], b[1]); ctx.stroke(); }
+  function draw() {
+    const { ctx, w } = V; ctx.clearRect(0, 0, w, w);
+    ctx.strokeStyle = css("--grid"); ctx.lineWidth = 1; const G = opt.grid;
+    for (let g = -G; g <= G; g += 50) { line(ctx, proj([g, -G, opt.floor]), proj([g, G, opt.floor])); line(ctx, proj([-G, g, opt.floor]), proj([G, g, opt.floor])); }
+    const o = proj([0, 0, opt.floor]); [[60, 0, 0, "x"], [0, 60, 0, "y"], [0, 0, 60, "z"]].forEach(([x, y, z, n]) => {
+      const p = proj([x, y, z + opt.floor]); ctx.strokeStyle = css("--muted"); line(ctx, o, p); ctx.fillStyle = css("--muted"); ctx.fillText(n, p[0] + 3, p[1] - 3); });
+    ctx.fillStyle = css("--cloud"); ctx.globalAlpha = .16;
+    for (const p of opt.cloud) { const [x, y] = proj(p); ctx.fillRect(x - .9, y - .9, 1.8, 1.8); }
+    ctx.globalAlpha = 1;
+    opt.chains(q).forEach(c => chain(ctx, c.map(proj), css("--link"), css("--joint"), 3.5));
+    const p = opt.fk(q), [tx, ty] = proj(p); cross(ctx, tx, ty, css("--target"));
+    S.set(q); const back = opt.ik(p);
+    const err = back ? Math.max(...q.map((a, i) => Math.abs(back[i] - a))) : NaN;
+    document.getElementById(rid).innerHTML =
+      `joints  q  = (${f1(q)}) °\nFK  p = (${f1(p)}) mm\nIK  q' = (${back ? f1(back) : "unreachable"}) °\n` +
+      (err < 1e-6 ? `<span class="ok">IK(FK(q)) = q  ✓</span>` : `<span class="bad">other IK branch</span>`);
+  }
+  let last = null;
+  V.cv.addEventListener("pointerdown", e => { last = [e.clientX, e.clientY]; V.cv.setPointerCapture(e.pointerId); V.cv.style.cursor = "grabbing"; });
+  V.cv.addEventListener("pointermove", e => { if (!last) return;
+    yaw -= (e.clientX - last[0]) * .01; pitch = Math.max(-0.2, Math.min(1.5, pitch + (e.clientY - last[1]) * .01)); last = [e.clientX, e.clientY]; draw(); });
+  V.cv.addEventListener("pointerup", () => { last = null; V.cv.style.cursor = ""; });
+  return { draw, fit: V.fit };
+}
+
+const views = [
+  planar("c-2d", "s-2d", "r-2d", five, { q0: [30, 30], names: ["θ0", "θ1"], ranges: [[-90, 150], [-90, 150]],
+    fk: q => five.fk(...q), ik: p => five.ik(...p),
+    chain: q => { const [a, b] = five.elbows(...q); return [[-five.L0 / 2, 0], a, five.fk(...q), b, [five.L0 / 2, 0]]; },
+    cloud: cloud2d, cx: 0, cy: 0, span: 620, top: .62 }),
+  planar("c-s", "s-s", "r-s", scara, { q0: [-30, 70], names: ["θ1", "θ2"], ranges: [[-150, 150], [0, 170]],
+    fk: q => scara.fk(q[0], q[1]).slice(0, 2), ik: p => { const s = scara.ik(p[0], p[1]); return s && s.slice(0, 2); },
+    chain: q => [[0, 0], [scara.L1 * sin(q[0] * R), scara.L1 * cos(q[0] * R)], scara.fk(q[0], q[1]).slice(0, 2)],
+    cloud: cloudS.map(p => p.slice(0, 2)), cx: 0, cy: 0, span: 380, top: .5 }),
+  spatial("c-p", "s-p", "r-p", { q0: [25, 20, -10], names: ["θ1", "θ2", "θ3"], ranges: [[-90, 90], [-80, 80], [-89, 89]],
+    fk: q => arm.fk(...q), ik: p => arm.ik(...p), chains: q => [arm.joints(...q)],
+    cloud: cloudP, c: [60, 0, 110], span: 560, yaw: -0.6, pitch: 0.35, grid: 250, floor: 0 }),
+  spatial("c-3d", "s-3d", "r-3d", { q0: [20, 35, 50], names: ["θ1", "θ2", "θ3"], ranges: [[-40, 90], [-40, 90], [-40, 90]],
+    fk: q => delta.fk(...q), ik: p => delta.ik(...p),
+    chains: q => { const a = delta.arms(...q); if (!a) return []; return [...a, [...a.map(x => x[0]), a[0][0]], [...a.map(x => x[2]), a[0][2]]]; },
+    cloud: cloud3, c: [0, 0, -110], span: 420, yaw: -0.5, pitch: 0.3, grid: 150, floor: -230 }),
+];
+views.forEach(v => v.draw());
+addEventListener("resize", () => views.forEach(v => { v.fit(); v.draw(); }));
+matchMedia("(prefers-color-scheme: dark)").addEventListener("change", () => views.forEach(v => v.draw()));
+</script>
+</body>
+</html>
