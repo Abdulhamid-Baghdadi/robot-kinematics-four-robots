@@ -30,15 +30,15 @@ Servos $`P_0, P_1`$ at $`(\mp L_0/2,\ 0)`$, cranks $`L_1 = 100`$, distal links $
 **Forward kinematics.** The crank tips are
 
 ```math
-P_2 = \begin{pmatrix} -L_1\sin\theta_0 - \tfrac{L_0}{2} \ L_1\cos\theta_0 \end{pmatrix},
+P_2 = \begin{pmatrix} -L_1\sin\theta_0 - \tfrac{L_0}{2} \\ L_1\cos\theta_0 \end{pmatrix},
 \qquad
-P_3 = \begin{pmatrix} L_1\sin\theta_1 + \tfrac{L_0}{2} \ L_1\cos\theta_1 \end{pmatrix}
+P_3 = \begin{pmatrix} L_1\sin\theta_1 + \tfrac{L_0}{2} \\ L_1\cos\theta_1 \end{pmatrix}
 ```
 
 With $`l_{23} = \lVert P_3 - P_2 \rVert`$ and $`\alpha`$ the angle of $`\overrightarrow{P_2P_3}`$, the tool point is
 
 ```math
-P_4 = P_2 + L_2 \begin{pmatrix} \cos(\alpha+\delta) \ \sin(\alpha+\delta) \end{pmatrix},
+P_4 = P_2 + L_2 \begin{pmatrix} \cos(\alpha+\delta) \\ \sin(\alpha+\delta) \end{pmatrix},
 \qquad
 \delta = \pm\arccos\frac{l_{23}}{2L_2}
 ```
@@ -92,8 +92,8 @@ Base height $`L_1 = 88.2`$, upper arm $`L_2 = 120.23`$, forearm $`L_3 = 150`$ mm
 ```math
 r = L_2\sin\theta_2 + L_3\sin(\theta_2 + \theta_3'),
 \qquad
-\begin{pmatrix} x \ y \ z \end{pmatrix} =
-\begin{pmatrix} r\cos\theta_1 \ r\sin\theta_1 \ L_1 + L_2\cos\theta_2 + L_3\cos(\theta_2 + \theta_3') \end{pmatrix}
+\begin{pmatrix} x \\ y \\ z \end{pmatrix} =
+\begin{pmatrix} r\cos\theta_1 \\ r\sin\theta_1 \\ L_1 + L_2\cos\theta_2 + L_3\cos(\theta_2 + \theta_3') \end{pmatrix}
 ```
 
 **Inverse kinematics.**
