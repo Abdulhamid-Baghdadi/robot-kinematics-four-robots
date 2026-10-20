@@ -25,19 +25,59 @@ Angles are in degrees, lengths in mm. Every module has `forward_kinematics`, `in
 
 <img src="docs/notation/2d-robot-fk.png" width="45%"> <img src="docs/notation/2d-robot-ik.png" width="45%">
 
-Servos P0, P1 at (∓L0/2, 0), cranks L1 = 100, distal links L2 = 180, L0 = 78.08.
+Servos $`P_0, P_1`$ at $`(\mp L_0/2,\ 0)`$, cranks $`L_1 = 100`$, distal links $`L_2 = 180`$, $`L_0 = 78.08`$ mm.
 
-- **FK:** crank tips P2 = (−L1 sin θ0 − L0/2, L1 cos θ0), P3 = (L1 sin θ1 + L0/2, L1 cos θ1). With l23 = |P3 − P2| and α the angle of P2→P3, the tool is P4 = P2 + L2 (cos(α+δ), sin(α+δ)) with δ = ±acos(l23 / 2L2) (the sign picks the assembly mode).
-- **IK:** each side on its own. Left: l04 = |P4 − P0|, α the angle of P0→P4 from the vertical, β from the cosine rule in the triangle (L1, L2, l04): β = acos((L1² − L2² + l04²) / (2 L1 l04)), so θ0 = β − α. The right side works the same way (γ, δ), elbows out.
+**Forward kinematics.** The crank tips are
+
+```math
+P_2 = \begin{pmatrix} -L_1\sin\theta_0 - \tfrac{L_0}{2} \ L_1\cos\theta_0 \end{pmatrix},
+\qquad
+P_3 = \begin{pmatrix} L_1\sin\theta_1 + \tfrac{L_0}{2} \ L_1\cos\theta_1 \end{pmatrix}
+```
+
+With $`l_{23} = \lVert P_3 - P_2 \rVert`$ and $`\alpha`$ the angle of $`\overrightarrow{P_2P_3}`$, the tool point is
+
+```math
+P_4 = P_2 + L_2 \begin{pmatrix} \cos(\alpha+\delta) \ \sin(\alpha+\delta) \end{pmatrix},
+\qquad
+\delta = \pm\arccos\frac{l_{23}}{2L_2}
+```
+
+where the sign of $`\delta`$ picks the assembly mode.
+
+**Inverse kinematics.** Each side is solved on its own. For the left servo, with $`l_{04} = \lVert P_4 - P_0 \rVert`$ and $`\alpha`$ the angle of $`\overrightarrow{P_0P_4}`$ from the vertical, the cosine rule in the triangle $`(L_1, L_2, l_{04})`$ gives
+
+```math
+\beta = \arccos\frac{L_1^2 - L_2^2 + l_{04}^2}{2L_1\,l_{04}},
+\qquad
+\theta_0 = \beta - \alpha
+```
+
+The right servo works the same way with $`\gamma`$ and $`\delta`$ (elbows out).
 
 ### 3d robot: delta
 
 <img src="docs/notation/3d-robot-delta.png" width="70%">
 
-Base triangle f = 178.78, effector triangle e = 69.28, upper arms rf = 96.1, forearms re = 150.
+Base triangle $`f = 178.78`$, effector triangle $`e = 69.28`$, upper arms $`r_f = 96.1`$, forearms $`r_e = 150`$ mm.
 
-- **IK:** each arm is solved in its own YZ plane: the elbow J1 is where the circle of the upper arm (radius rf around F1) meets the sphere of the forearm (radius re around the shifted effector joint E1′), giving θ = atan(−zJ / (yF − yJ)). Arms 2 and 3 use the same function after rotating the target by ±120°.
-- **FK:** the effector is where three spheres (radius re, centred at the elbows shifted inward by the effector radius) meet. Eliminating x and y gives a quadratic a z² + b z + c = 0, and the lower root is taken.
+**Inverse kinematics.** Each arm is solved in its own YZ plane. The elbow $`J_1`$ is where the circle of the upper arm (radius $`r_f`$ around $`F_1`$) meets the sphere of the forearm (radius $`r_e`$ around the shifted effector joint $`E_1'`$):
+
+```math
+\theta_1 = \arctan\frac{-z_J}{y_F - y_J}
+```
+
+Arms 2 and 3 use the same function after rotating the target by $`\pm 120^\circ`$.
+
+**Forward kinematics.** The effector is where three spheres meet (radius $`r_e`$, centred at the elbows shifted inward by the effector radius). Eliminating $`x`$ and $`y`$ leaves a quadratic in $`z`$, and the lower root is taken:
+
+```math
+a z^2 + b z + c = 0
+\quad\Rightarrow\quad
+z = \frac{-b - \sqrt{b^2 - 4ac}}{2a},
+\qquad
+x = \frac{a_1 z + b_1}{d},\quad y = \frac{a_2 z + b_2}{d}
+```
 
 The derivation follows the well-known *Delta robot kinematics* tutorial from the Trossen Robotics community, applied to this robot's dimensions.
 
@@ -45,19 +85,64 @@ The derivation follows the well-known *Delta robot kinematics* tutorial from the
 
 <img src="docs/notation/p-robot.png" width="70%">
 
-Base height L1 = 88.2, upper arm L2 = 120.23, forearm L3 = 150. θ2 is measured from the vertical; θ3 has a +90° offset so that (0, 0, 0) is the zero pose (upper arm up, forearm horizontal).
+Base height $`L_1 = 88.2`$, upper arm $`L_2 = 120.23`$, forearm $`L_3 = 150`$ mm. $`\theta_2`$ is measured from the vertical, and $`\theta_3' = \theta_3 + 90^\circ`$ so that $`(0, 0, 0)`$ is the zero pose (upper arm up, forearm horizontal).
 
-- **FK:** r = L2 sin θ2 + L3 sin(θ2 + θ3′), x = r cos θ1, y = r sin θ1, z = L1 + L2 cos θ2 + L3 cos(θ2 + θ3′), with θ3′ = θ3 + 90°.
-- **IK:** θ1 = atan2(y, x). In the arm plane D = √(r² + (z − L1)²); the cosine rule gives the elbow α = acos((L2² + L3² − D²) / 2L2L3), θ3′ = π − α, and the shoulder is θ2 = π/2 − asin((z − L1)/D) − β, with β the angle between D and the upper arm.
+**Forward kinematics.**
+
+```math
+r = L_2\sin\theta_2 + L_3\sin(\theta_2 + \theta_3'),
+\qquad
+\begin{pmatrix} x \ y \ z \end{pmatrix} =
+\begin{pmatrix} r\cos\theta_1 \ r\sin\theta_1 \ L_1 + L_2\cos\theta_2 + L_3\cos(\theta_2 + \theta_3') \end{pmatrix}
+```
+
+**Inverse kinematics.**
+
+```math
+\theta_1 = \operatorname{atan2}(y, x),
+\qquad
+D = \sqrt{r^2 + (z - L_1)^2}
+```
+
+```math
+\alpha = \arccos\frac{L_2^2 + L_3^2 - D^2}{2L_2L_3},
+\qquad
+\theta_3' = \pi - \alpha,
+\qquad
+\theta_2 = \frac{\pi}{2} - \arcsin\frac{z - L_1}{D} - \beta
+```
+
+where $`\beta`$ is the angle between $`D`$ and the upper arm.
 
 ### s robot: SCARA
 
 <img src="docs/notation/s-robot.png" width="70%">
 
-L1 = 92.75, L2 = 70.72; the third axis drives a wheel of radius R = 20, so z = R θ3 is the distance rolled.
+$`L_1 = 92.75`$, $`L_2 = 70.72`$ mm. The third axis drives a wheel of radius $`R = 20`$ mm, so $`z`$ is the distance rolled.
 
-- **FK:** x = L1 sin θ1 + L2 sin(θ1 + θ2), y = L1 cos θ1 + L2 cos(θ1 + θ2), z = R θ3.
-- **IK:** r = √(x² + y²); cosine rule: θ2 = π − acos((L1² + L2² − r²) / 2L1L2); θ1 = atan2(x, y) − β, where β is the angle between r and L1. The IK layout follows [lfelipev/scara_trajectory_planning](https://github.com/lfelipev/scara_trajectory_planning).
+**Forward kinematics.**
+
+```math
+x = L_1\sin\theta_1 + L_2\sin(\theta_1 + \theta_2),
+\qquad
+y = L_1\cos\theta_1 + L_2\cos(\theta_1 + \theta_2),
+\qquad
+z = R\,\theta_3
+```
+
+**Inverse kinematics.**
+
+```math
+r = \sqrt{x^2 + y^2},
+\qquad
+\theta_2 = \pi - \arccos\frac{L_1^2 + L_2^2 - r^2}{2L_1L_2},
+\qquad
+\theta_1 = \operatorname{atan2}(x, y) - \beta,
+\qquad
+\theta_3 = \frac{z}{R}
+```
+
+where $`\beta`$ is the angle between $`r`$ and $`L_1`$. The IK layout follows [lfelipev/scara_trajectory_planning](https://github.com/lfelipev/scara_trajectory_planning).
 
 ## Run it
 
